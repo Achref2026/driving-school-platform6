@@ -1307,20 +1307,40 @@ class NewApprovalSystemTester:
         return self.tests_passed == self.tests_run
 
 if __name__ == "__main__":
-    # Choose which test to run
-    test_type = "new_approval_system"  # Options: "general", "document_approval", "enrollment_approval", "new_approval_system"
+    # Get the backend URL from environment
+    backend_url = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:8001')
+    print(f"Using backend URL: {backend_url}")
     
-    if test_type == "general":
-        tester = DrivingSchoolAPITester()
-        success = tester.run_all_tests()
-    elif test_type == "document_approval":
-        tester = DocumentApprovalTester()
-        success = tester.run_document_approval_tests()
-    elif test_type == "enrollment_approval":
-        tester = EnrollmentApprovalTester()
-        success = tester.run_enrollment_approval_tests()
-    else:
-        tester = NewApprovalSystemTester()
-        success = tester.run_new_approval_system_tests()
-        
-    sys.exit(0 if success else 1)
+    # Run all test types in sequence
+    test_results = {}
+    
+    # 1. General API Tests
+    print("\n\n========== RUNNING GENERAL API TESTS ==========")
+    tester = DrivingSchoolAPITester(base_url=backend_url)
+    test_results["general"] = tester.run_all_tests()
+    
+    # 2. Document Approval Tests
+    print("\n\n========== RUNNING DOCUMENT APPROVAL TESTS ==========")
+    tester = DocumentApprovalTester(base_url=backend_url)
+    test_results["document_approval"] = tester.run_document_approval_tests()
+    
+    # 3. Enrollment Approval Tests
+    print("\n\n========== RUNNING ENROLLMENT APPROVAL TESTS ==========")
+    tester = EnrollmentApprovalTester(base_url=backend_url)
+    test_results["enrollment_approval"] = tester.run_enrollment_approval_tests()
+    
+    # 4. New Approval System Tests
+    print("\n\n========== RUNNING NEW APPROVAL SYSTEM TESTS ==========")
+    tester = NewApprovalSystemTester(base_url=backend_url)
+    test_results["new_approval_system"] = tester.run_new_approval_system_tests()
+    
+    # Print overall results
+    print("\n\n========== OVERALL TEST RESULTS ==========")
+    for test_type, result in test_results.items():
+        print(f"{test_type}: {'PASSED' if result else 'FAILED'}")
+    
+    # Exit with success if all tests passed
+    all_passed = all(test_results.values())
+    print(f"\nOverall result: {'PASSED' if all_passed else 'FAILED'}")
+    
+    sys.exit(0 if all_passed else 1)
