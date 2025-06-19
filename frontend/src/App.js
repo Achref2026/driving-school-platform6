@@ -7,7 +7,7 @@ import StudentDashboard from './StudentDashboard';
 import DocumentUpload from './components/DocumentUpload';
 
 // Get backend URL from environment
-const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+const API_BASE_URL = 'http://localhost:8001';
 
 // Axios instance
 const api = axios.create({
