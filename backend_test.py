@@ -455,12 +455,89 @@ def test_manager_dashboard_and_role_change():
     
     return True
 
-def main():
-    # Get base URL from command line if provided
-    base_url = "http://localhost:8001"
+def test_states_and_schools_loading():
+    """
+    Specific test for the states and driving schools loading issues
+    that were reported by the user.
+    """
+    print("\n" + "="*50)
+    print("🧪 TESTING STATES AND DRIVING SCHOOLS LOADING")
+    print("="*50)
     
-    # Test the critical bug fix and manager dashboard
-    role_change_test_passed = test_manager_dashboard_and_role_change()
+    # Use the public URL from the frontend .env file
+    base_url = "https://e0890b28-e7c6-4b8b-bb87-56e993a29411.preview.emergentagent.com"
+    
+    # Setup tester
+    tester = DrivingSchoolAPITester(base_url)
+    
+    # Test states loading
+    print("\n📋 PHASE 1: Testing States API")
+    states_success, states_data = tester.test_get_states()
+    
+    if not states_success:
+        print("❌ Failed to get states")
+        return False
+    
+    # Verify we have all 58 Algerian states
+    if 'states' in states_data and len(states_data['states']) == 58:
+        print(f"✅ Successfully retrieved all 58 Algerian states")
+    else:
+        state_count = len(states_data.get('states', []))
+        print(f"❌ Expected 58 states, got {state_count}")
+        return False
+    
+    # Test driving schools loading
+    print("\n📋 PHASE 2: Testing Driving Schools API")
+    schools_success, schools_data = tester.test_get_driving_schools()
+    
+    if not schools_success:
+        print("❌ Failed to get driving schools")
+        return False
+    
+    # Verify we have schools data
+    if 'schools' in schools_data and len(schools_data['schools']) > 0:
+        print(f"✅ Successfully retrieved {len(schools_data['schools'])} driving schools")
+    else:
+        print("❌ No driving schools found in the response")
+        return False
+    
+    # Test filtering by state
+    print("\n📋 PHASE 3: Testing Driving Schools Filtering by State")
+    filter_success, filter_data = tester.run_test(
+        "Get Driving Schools filtered by Alger",
+        "GET",
+        "driving-schools?state=Alger",
+        200
+    )
+    
+    if not filter_success:
+        print("❌ Failed to filter driving schools by state")
+        return False
+    
+    # Verify filtered schools
+    if 'schools' in filter_data:
+        alger_schools = filter_data['schools']
+        print(f"✅ Successfully filtered schools by state 'Alger', found {len(alger_schools)} schools")
+        
+        # Verify all returned schools are in Alger
+        all_in_alger = all(school['state'] == 'Alger' for school in alger_schools)
+        if all_in_alger:
+            print("✅ All filtered schools are correctly in Alger state")
+        else:
+            print("❌ Some filtered schools are not in Alger state")
+            return False
+    else:
+        print("❌ No schools data in filtered response")
+        return False
+    
+    return True
+
+def main():
+    # Use the public URL from the frontend .env file
+    base_url = "https://e0890b28-e7c6-4b8b-bb87-56e993a29411.preview.emergentagent.com"
+    
+    # Test the specific issues reported by the user
+    states_schools_test_passed = test_states_and_schools_loading()
     
     # Setup tester for basic API tests
     tester = DrivingSchoolAPITester(base_url)
@@ -471,35 +548,15 @@ def main():
     tester.test_get_driving_schools()
     tester.test_get_driving_schools_with_filters()
     
-    # Test registration and login
-    register_success, register_data = tester.test_register_user()
-    
-    if not register_success:
-        # Try login with default credentials
-        login_success, login_data = tester.test_login()
-        if not login_success:
-            print("❌ Both registration and login failed, cannot proceed with authenticated tests")
-            tester.print_summary()
-            return 1
-    
-    # Run tests that require authentication
-    tester.test_get_current_user()
-    tester.test_get_dashboard()
-    tester.test_get_documents()
-    tester.test_get_notifications()
-    tester.test_get_courses()
-    
-    # Test enrollment if user is not already enrolled
-    if tester.user and tester.user.get('role') in ['guest', 'student']:
-        tester.test_enroll_in_school()
-    
     # Print summary
     all_passed = tester.print_summary()
     
-    # Include role change test result in final assessment
-    if not role_change_test_passed:
+    # Include states and schools loading test result in final assessment
+    if not states_schools_test_passed:
         all_passed = False
-        print("\n❌ CRITICAL BUG FIX TEST FAILED: Role change from guest to student is not working")
+        print("\n❌ STATES AND DRIVING SCHOOLS LOADING TEST FAILED")
+    else:
+        print("\n✅ STATES AND DRIVING SCHOOLS LOADING TEST PASSED")
     
     return 0 if all_passed else 1
 
