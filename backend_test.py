@@ -6,7 +6,7 @@ import string
 from datetime import datetime
 
 class DrivingSchoolAPITester:
-    def __init__(self, base_url="http://localhost:8001"):
+    def __init__(self, base_url="https://e0890b28-e7c6-4b8b-bb87-56e993a29411.preview.emergentagent.com"):
         self.base_url = base_url
         self.token = None
         self.user = None
